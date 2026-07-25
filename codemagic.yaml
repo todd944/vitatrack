@@ -3,12 +3,14 @@ workflows:
     name: VitaTrack iOS
     max_build_duration: 60
     instance_type: mac_mini_m2
+    integrations:
+      # Set this up once in Codemagic's UI: Teams > Integrations > App Store
+      # Connect > add your API key, name it "vitatrack_asc". That single
+      # integration is what lets both code signing AND the build-number
+      # lookup below talk to App Store Connect without any local Mac or
+      # manually-managed credentials.
+      app_store_connect: vitatrack_asc
     environment:
-      groups:
-        # Create this group in Codemagic's UI (Teams > Environment variables)
-        # with your App Store Connect API key (issuer ID, key ID, .p8 file)
-        # — that's what lets Codemagic sign and upload without any local Mac.
-        - app_store_credentials
       vars:
         BUNDLE_ID: "com.vitatrack.app"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
@@ -29,6 +31,15 @@ workflows:
       - name: Set up code signing
         script: |
           xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          # Asks App Store Connect what the last-uploaded build number was
+          # (across TestFlight + App Store) and bumps one past it — safer
+          # than a local counter, since that can drift out of sync if a
+          # build is ever triggered from a different machine/branch.
+          cd ios/App
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$BUNDLE_ID")
+          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
       - name: Build and archive
         script: |
           xcode-project build-ipa \
