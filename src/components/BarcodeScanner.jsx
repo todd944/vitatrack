@@ -47,8 +47,10 @@ export default function BarcodeScanner({ onScan, onClose }) {
 
   useEffect(() => {
     let cancelled = false
+    let found = false
     setNeedsTapToPlay(false)
     setStatus('starting')
+    setTorchOn(false) // a restarted stream's torch is always off, regardless of the old one's state
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('unsupported')
@@ -73,6 +75,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
     reader
       .decodeFromConstraints(constraints, videoRef.current, (result, _error, controls) => {
         if (cancelled || !result) return
+        found = true
         controlsRef.current = controls
         if (controlsRef.current.frameMonitor) clearInterval(controlsRef.current.frameMonitor)
         // A successful decode used to close the overlay instantly, which
@@ -98,6 +101,12 @@ export default function BarcodeScanner({ onScan, onClose }) {
           controls.stop()
           return
         }
+        // A decode can succeed fast enough that the callback above already
+        // fired (setting status to 'captured' and stopping the stream)
+        // before this promise settles — without this guard, this handler
+        // would clobber that back to 'scanning' and re-arm a frame monitor
+        // on an already-dead stream.
+        if (found) return
         controlsRef.current = controls
         setStatus('scanning')
 
