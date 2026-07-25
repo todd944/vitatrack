@@ -1,0 +1,453 @@
+:root {
+  /* Palette — cool clinical paper + ink, functional safety colors kept separate from brand */
+  --paper: #F3F5F3;
+  --paper-raised: #FFFFFF;
+  --ink: #16302E;
+  --ink-soft: #47605D;
+  --brand: #1F5C56;
+  --brand-deep: #0F3B37;
+  --line: #D7DED9;
+  --safe: #2E7D4F;
+  --safe-bg: #E7F3EB;
+  --caution: #A8710C;
+  --caution-bg: #FBF0DA;
+  --danger: #B23A2E;
+  --danger-bg: #FBE9E6;
+
+  /* Category colors — distinct from the safe/caution/danger severity system
+     above, purely for fast visual scanning of the library/schedule. */
+  --cat-vitamin: #2F6FA8;
+  --cat-vitamin-bg: #E7F0FA;
+  --cat-mineral: #8C5A2B;
+  --cat-mineral-bg: #F5EAD9;
+  --cat-herbal: #5B7B4F;
+  --cat-herbal-bg: #EAF0E3;
+  --cat-other: #6B5B95;
+  --cat-other-bg: #EDE7F6;
+  --cat-custom: #556270;
+  --cat-custom-bg: #E8ECEF;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "IBM Plex Sans", -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--paper);
+  padding-bottom: 72px;
+}
+
+/* Below this width, nav stays a bottom tab bar (thumb-reachable, standard
+   mobile convention). At and above it, there's enough room that a fixed
+   bottom bar just strands itself below short content, so nav switches to
+   a fixed left sidebar instead — the standard desktop-web pattern. It's
+   `position: fixed` (not `sticky`) so it's locked in its final spot from
+   the start, instead of visually detaching and "catching up" partway
+   through a scroll the way a sticky element does. */
+@media (min-width: 900px) {
+  #root {
+    max-width: 960px;
+    padding-bottom: 0;
+  }
+}
+
+.app-shell {
+  display: block;
+}
+
+.app-main {
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .app-main {
+    margin-left: 216px;
+  }
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--brand-deep);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.label-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.category-tag-vitamin { color: var(--cat-vitamin); background: var(--cat-vitamin-bg); border-color: var(--cat-vitamin); }
+.category-tag-mineral { color: var(--cat-mineral); background: var(--cat-mineral-bg); border-color: var(--cat-mineral); }
+.category-tag-herbal { color: var(--cat-herbal); background: var(--cat-herbal-bg); border-color: var(--cat-herbal); }
+.category-tag-other { color: var(--cat-other); background: var(--cat-other-bg); border-color: var(--cat-other); }
+.category-tag-custom { color: var(--cat-custom); background: var(--cat-custom-bg); border-color: var(--cat-custom); }
+
+/* Persistent safety reminder on every screen — kept deliberately quiet since
+   the substantive version (full "not medical advice" section + Poison
+   Control number) already lives in the Terms of Service the user agrees to
+   during onboarding. This is a lightweight reinforcement, not the primary
+   disclosure, so it shouldn't compete visually with the app's own content. */
+.disclaimer-banner {
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 4px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.reminder-toast {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--brand);
+  color: white;
+  padding: 10px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--brand-deep);
+}
+
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.severity-safe { background: var(--safe-bg); border-color: var(--safe); color: var(--safe); }
+.severity-caution { background: var(--caution-bg); border-color: var(--caution); color: var(--caution); }
+.severity-danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.nav-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  background: var(--paper-raised);
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 900px) {
+  .nav-tabs {
+    /* Locked in place from the start — tracks #root's centered left edge
+       via the same (100vw - max-width) / 2 math #root's own margin:auto
+       uses, so it stays aligned with the content instead of hugging the
+       true browser-window edge on wide screens. */
+    /* 64px clears the disclaimer banner (~48px tall) plus a little
+       breathing room — the banner's text is static so its height is
+       stable at this breakpoint. If a reminder banner is also showing,
+       the sidebar can briefly sit under it; that's an acceptable rare
+       edge case rather than wiring up a dynamic height measurement. */
+    position: fixed;
+    top: 64px;
+    left: max(0px, calc((100vw - 960px) / 2));
+    bottom: auto;
+    transform: none;
+    width: 200px;
+    max-width: none;
+    flex: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    background: none;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    padding: 8px 16px 8px 0;
+    height: fit-content;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+.nav-tabs button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+@media (min-width: 900px) {
+  .nav-tabs button {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+}
+
+.nav-tabs button.active {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .nav-tabs button.active {
+    background: var(--safe-bg);
+  }
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.section-icon {
+  width: 22px;
+  height: 22px;
+  stroke: var(--brand-deep);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -5px;
+  margin-right: 8px;
+}
+
+.source-cite {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-weight: 600;
+}
+
+.btn-secondary {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 18px;
+  color: var(--ink);
+}
+
+/* Disabled buttons (e.g. onboarding's Continue before you check the box)
+   otherwise look identical to enabled ones — nothing tells you why tapping
+   does nothing. */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  padding-bottom: 4px;
+}
+
+.calendar-cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  padding: 2px;
+}
+
+.calendar-cell-blank {
+  background: none;
+  border: none;
+}
+
+.calendar-cell-today {
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+
+.calendar-cell-selected {
+  background: var(--safe-bg);
+}
+
+.calendar-cell-caution {
+  background: var(--caution-bg);
+  border-color: var(--caution);
+}
+
+.calendar-cell-danger {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.calendar-cell-num {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.calendar-cell-dot {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--brand);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0 5px;
+}
+
+.calendar-cell-caution .calendar-cell-dot {
+  color: var(--caution);
+}
+
+.calendar-cell-danger .calendar-cell-dot {
+  color: var(--danger);
+}
+
+.weekday-picker {
+  display: flex;
+  gap: 6px;
+}
+
+.weekday-toggle {
+  min-width: 36px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.weekday-toggle-active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: white;
+}
+
+/* Letter section headers stick to the top of the viewport as their group
+   scrolls past — top offset clears the sticky disclaimer banner above it
+   (an approximate fixed value, same convention used for the sidebar's top
+   offset, rather than measuring the banner's exact height dynamically). */
+.az-section-header {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  padding: 10px 0 4px;
+  margin-top: 4px;
+  position: sticky;
+  top: 32px;
+  scroll-margin-top: 32px;
+  background: var(--paper);
+  z-index: 10;
+}
+
+/* Fixed (not sticky) A-Z jump strip, vertically centered — right offset
+   mirrors the sidebar's left-offset trick so it tracks #root's centered
+   edge instead of the true browser-window edge on wide screens. */
+.az-index {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  right: max(2px, calc((100vw - 720px) / 2 + 2px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 2px;
+  z-index: 40;
+}
+
+@media (min-width: 900px) {
+  .az-index {
+    right: max(2px, calc((100vw - 960px) / 2 + 2px));
+  }
+}
+
+.az-index-letter {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--brand);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.az-index-letter:disabled {
+  color: var(--line);
+  cursor: default;
+}

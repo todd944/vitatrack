@@ -1,0 +1,44 @@
+workflows:
+  ios-workflow:
+    name: VitaTrack iOS
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        # Create this group in Codemagic's UI (Teams > Environment variables)
+        # with your App Store Connect API key (issuer ID, key ID, .p8 file)
+        # — that's what lets Codemagic sign and upload without any local Mac.
+        - app_store_credentials
+      vars:
+        BUNDLE_ID: "com.vitatrack.app"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: latest
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build web app
+        script: npm run build
+      - name: Sync Capacitor iOS project
+        script: npx cap sync ios
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios/App && pod install
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Build and archive
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false # flip to true once you're ready for a real review submission
